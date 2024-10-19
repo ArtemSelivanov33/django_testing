@@ -1,7 +1,8 @@
-from django.test import TestCase
-from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.test import Client, TestCase
+from django.urls import reverse
 
+from notes.forms import NoteForm
 from notes.models import Note
 
 User = get_user_model()
@@ -11,71 +12,41 @@ class TestContent(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.author1 = User.objects.create_user(
-            username='author1',
-            password='password1'
+        cls.author = User.objects.create(
+            username='Пользователь'
         )
-        cls.author2 = User.objects.create_user(
-            username='author2',
-            password='password2'
+        cls.note = Note.objects.create(
+            title='Заголовок',
+            text='Текст',
+            author=cls.author
         )
-        cls.note1 = Note.objects.create(
-            title='Заметка автора 1',
-            text='Содержимое заметки 1',
-            author=cls.author1
-        )
-        cls.note2 = Note.objects.create(
-            title='Заметка автора 2',
-            text='Содержимое заметки 2',
-            author=cls.author2
-        )
+        cls.reader = User.objects.create(username='Аноним')
+        cls.author_client = Client()
+        cls.author_client.force_login(cls.author)
+        cls.reader_client = Client()
+        cls.reader_client.force_login(cls.reader)
 
-    def login_as_author1(self):
-        self.client.login(
-            username='author1',
-            password='password1'
-        )
+        cls.list_url = reverse('notes:list')
+        cls.add_url = reverse('notes:add')
+        cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
 
-    def test_note_in_context_list(self):
-        """Заметки одного пользователя не попадают в заметки другого."""
-        self.login_as_author1()
-        response = self.client.get(
-            reverse('notes:list')
-        )
-        self.assertIn(
-            'object_list',
-            response.context
-        )
-        self.assertIn(
-            self.note1,
-            response.context['object_list']
-        )
-        self.assertNotIn(
-            self.note2,
-            response.context['object_list']
-        )
+    def test_notes_list_for_anon_user(self):
+        response = self.reader_client.get(self.list_url)
+        notes = response.context['object_list']
+        self.assertNotIn(self.note, notes)
 
-    def test_create_note_form(self):
-        """Форма для создания заметки передана в контекст."""
-        self.login_as_author1()
-        response = self.client.get(
-            reverse('notes:add')
-        )
-        self.assertIn(
-            'form',
-            response.context
-        )
+    def test_notes_list_for_auth_user(self):
+        response = self.author_client.get(self.list_url)
+        notes = response.context['object_list']
+        self.assertIn(self.note, notes)
 
-    def test_edit_note_form(self):
-        """Форма для редактирования заметки передана в контекст."""
-        self.login_as_author1()
-        response = self.client.get(
-            reverse(
-                'notes:edit',
-                kwargs={'slug': self.note1.slug}
-            )
+    def test_edit_and_add_note_pages_contains_form(self):
+        """Проверка передачи формы в контекст."""
+        urls = (
+            self.add_url,
+            self.edit_url
         )
-        self.assertIn(
-            'form',
-            response.context
-        )
+        for url in urls:
+            response = self.author_client.get(url)
+            self.assertIn('form', response.context)
+            self.assertIsInstance(response.context['form'], NoteForm)
