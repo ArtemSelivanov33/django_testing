@@ -64,12 +64,13 @@ def test_authenticated_user_can_edit_own_comment(
     """Пользователь может редактировать свои комментарии."""
     old_author = comment.author
     old_news = comment.news
+    comment_id = comment.id
     response = author_client.post(edit_url, data=FORMS_DATA)
     assertRedirects(response, url_comments)
-    comment.refresh_from_db()
-    assert comment.text == FORMS_DATA['text']
-    assert comment.author == old_author
-    assert comment.news == old_news
+    updated_comment = Comment.objects.get(id=comment_id)
+    assert updated_comment.text == FORMS_DATA['text']
+    assert updated_comment.author == old_author
+    assert updated_comment.news == old_news
 
 
 def test_authenticated_user_can_delete_comment(
@@ -92,15 +93,12 @@ def test_authenticated_user_cannot_edit_others_comment(
         comment
 ):
     """Пользователь не может редактировать чужие комментарии."""
-    old_text = comment.text
-    old_author = comment.author
-    old_news = comment.news
     response = admin_client.post(edit_url, data=FORMS_DATA)
     assert response.status_code == HTTPStatus.NOT_FOUND
     updated_comment = Comment.objects.get(id=comment.id)
-    assert updated_comment.text == old_text
-    assert updated_comment.author == old_author
-    assert updated_comment.news == old_news
+    assert updated_comment.text == comment.text
+    assert updated_comment.author == comment.author
+    assert updated_comment.news == comment.news
 
 
 def test_authenticated_user_cannot_delete_others_comment(

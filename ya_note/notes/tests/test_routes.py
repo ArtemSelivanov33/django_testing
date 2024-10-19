@@ -9,8 +9,7 @@ from notes.models import Note
 User = get_user_model()
 
 
-class TestRoutes(TestCase):
-
+class BaseTestCase(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.author = User.objects.create(username='Пользователь')
@@ -40,6 +39,8 @@ class TestRoutes(TestCase):
             reverse('notes:success'),
         )
 
+
+class TestRoutes(BaseTestCase):
     def test_pages_availability(self):
         """Проверка доступности страниц анон пользователям и всем остальным."""
         for url in self.urls_for_anonymous_access:

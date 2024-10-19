@@ -12,13 +12,12 @@ from news.models import Comment, News
 @pytest.fixture
 def get_news():
     today = datetime.today()
-    get_news = News.objects.bulk_create(
+    News.objects.bulk_create(
         News(title=f'News {i}',
              text='Some content',
              date=today - timedelta(days=i))
         for i in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
     )
-    return get_news
 
 
 @pytest.fixture
@@ -45,15 +44,12 @@ def news():
 @pytest.fixture
 def get_comments_news(news, author):
     now = timezone.now()
-    comments_list = []
     for index in range(2):
         comment = Comment.objects.create(
             news=news, author=author, text=f'Test text {index}',
         )
         comment.created = now + timedelta(days=index)
         comment.save()
-        comments_list.append(comment)
-    return comments_list
 
 
 @pytest.fixture
