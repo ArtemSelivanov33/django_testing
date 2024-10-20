@@ -1,38 +1,12 @@
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
-from django.urls import reverse
 
 from notes.forms import NoteForm
-from notes.models import Note
+from .base_test import BaseTestContent
 
 User = get_user_model()
 
 
-class BaseTestCase(TestCase):
-
-    @classmethod
-    def setUpTestData(cls):
-        """Создание общих фикстур для всех тестов."""
-        cls.author = User.objects.create(username='Пользователь')
-        cls.note = Note.objects.create(
-            title='Заголовок',
-            text='Текст',
-            author=cls.author
-        )
-        cls.reader = User.objects.create(username='Аноним')
-
-        cls.author_client = Client()
-        cls.author_client.force_login(cls.author)
-
-        cls.reader_client = Client()
-        cls.reader_client.force_login(cls.reader)
-
-        cls.list_url = reverse('notes:list')
-        cls.add_url = reverse('notes:add')
-        cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
-
-
-class TestContent(BaseTestCase):
+class TestContent(BaseTestContent):
 
     def test_notes_list_for_anon_user(self):
         response = self.reader_client.get(self.list_url)

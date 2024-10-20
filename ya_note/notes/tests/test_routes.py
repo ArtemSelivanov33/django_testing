@@ -1,46 +1,13 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
-from django.urls import reverse
 
-from notes.models import Note
+from .base_test import BaseTestRoutes
 
 User = get_user_model()
 
 
-class BaseTestCase(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.author = User.objects.create(username='Пользователь')
-        cls.note = Note.objects.create(title='Заголовок',
-                                       text='Текст', author=cls.author)
-        cls.reader = User.objects.create(username='Аноним')
-        cls.author_client = Client()
-        cls.author_client.force_login(cls.author)
-        cls.reader_client = Client()
-        cls.reader_client.force_login(cls.reader)
-
-        cls.login_url = reverse('users:login')
-        cls.urls_for_author_only = (
-            reverse('notes:detail', args=(cls.note.slug,)),
-            reverse('notes:edit', args=(cls.note.slug,)),
-            reverse('notes:delete', args=(cls.note.slug,)),
-        )
-        cls.urls_for_anonymous_access = (
-            reverse('notes:home'),
-            reverse('users:login'),
-            reverse('users:logout'),
-            reverse('users:signup'),
-        )
-        cls.urls_for_author_access = (
-            reverse('notes:add'),
-            reverse('notes:list'),
-            reverse('notes:success'),
-        )
-
-
-class TestRoutes(BaseTestCase):
+class TestRoutes(BaseTestRoutes):
     def test_pages_availability(self):
         """Проверка доступности страниц анон пользователям и всем остальным."""
         for url in self.urls_for_anonymous_access:

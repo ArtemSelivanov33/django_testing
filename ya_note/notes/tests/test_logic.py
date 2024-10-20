@@ -1,58 +1,17 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
 from pytils.translit import slugify
-from django.urls import reverse
+
 
 from notes.forms import WARNING
 from notes.models import Note
+from .base_test import BaseTestLogic
 
 User = get_user_model()
 
 
-class BaseTestCase(TestCase):
-    NOTE_TEXT = 'Текст заметки'
-    NOTE_TITLE = 'Текст заголовка'
-    NOTE_SLUG = 'slug'
-    NEW_NOTE_TEXT = 'Обновлённая заметка'
-    NEW_NOTE_TITLE = 'Обновлённый заголовок заметки'
-    NEW_NOTE_SLUG = 'new_slug'
-    URL_SUCCESS = reverse('notes:success')
-    URL_ADD = reverse('notes:add')
-
-    @classmethod
-    def setUpTestData(cls):
-        cls.user = User.objects.create(username='Пользователь')
-        cls.auth_client = Client()
-        cls.auth_client.force_login(cls.user)
-        cls.author = User.objects.create(username='Автор заметки')
-        cls.author_client = Client()
-        cls.author_client.force_login(cls.author)
-        cls.reader = User.objects.create(username='Читатель')
-        cls.reader_client = Client()
-        cls.reader_client.force_login(cls.reader)
-        cls.note = Note.objects.create(
-            title='Заголовок',
-            slug='Slug',
-            author=cls.author,
-            text=cls.NOTE_TEXT
-        )
-        cls.edit_url = reverse('notes:edit', args=(cls.note.slug,))
-        cls.delete_url = reverse('notes:delete', args=(cls.note.slug,))
-        cls.form_data = {
-            'text': cls.NEW_NOTE_TEXT,
-            'title': cls.NEW_NOTE_TITLE,
-            'slug': cls.NEW_NOTE_SLUG
-        }
-        cls.form_data = {
-            'text': cls.NOTE_TEXT,
-            'title': cls.NOTE_TITLE,
-            'slug': cls.NOTE_SLUG
-        }
-
-
-class TestNoteCreation(BaseTestCase):
+class TestNoteCreation(BaseTestLogic):
     def setUp(self):
         Note.objects.all().delete()
 
@@ -88,7 +47,7 @@ class TestNoteCreation(BaseTestCase):
         self.assertEqual(new_note.slug, expected_slug)
 
 
-class TestNoteEditDelete(BaseTestCase):
+class TestNoteEditDelete(BaseTestLogic):
     def test_unique_slug(self):
         """Проверка уникальности slug."""
         self.form_data['slug'] = 'Slug'
